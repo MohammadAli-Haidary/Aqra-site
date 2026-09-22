@@ -5,8 +5,8 @@ const books = [
     id: 1,
     title: 'بوف کور',
     author: 'صادق هدایت',
-    price: '۸۵,۰۰۰',
-    oldPrice: '۱۲۰,۰۰۰',
+    price: '۸۵۰',
+    oldPrice: '۱,۲۰۰',
     rating: 4.8,
     badge: 'پرفروش',
     category: 'ادبیات داستانی',
@@ -17,8 +17,8 @@ const books = [
     id: 2,
     title: 'کلیدر',
     author: 'محمود دولت‌آبادی',
-    price: '۲۵۰,۰۰۰',
-    oldPrice: '۳۵۰,۰۰۰',
+    price: '۲,۵۰۰',
+    oldPrice: '۳,۵۰۰',
     rating: 4.9,
     badge: 'پرفروش',
     category: 'ادبیات داستانی',
@@ -29,8 +29,8 @@ const books = [
     id: 3,
     title: 'شازده احتجاب',
     author: 'هوشنگ گلشیری',
-    price: '۶۵,۰۰۰',
-    oldPrice: '۹۰,۰۰۰',
+    price: '۶۵۰',
+    oldPrice: '۹۰۰',
     rating: 4.5,
     badge: 'جدید',
     category: 'ادبیات داستانی',
@@ -41,8 +41,8 @@ const books = [
     id: 4,
     title: 'دیوان حافظ',
     author: 'حافظ شیرازی',
-    price: '۱۵۰,۰۰۰',
-    oldPrice: '۲۰۰,۰۰۰',
+    price: '۱,۵۰۰',
+    oldPrice: '۲,۰۰۰',
     rating: 5.0,
     badge: 'پرفروش',
     category: 'شعر و ادبیات',
@@ -53,8 +53,8 @@ const books = [
     id: 5,
     title: 'مثنوی معنوی',
     author: 'مولانا جلال‌الدین',
-    price: '۱۸۰,۰۰۰',
-    oldPrice: '۲۵۰,۰۰۰',
+    price: '۱,۸۰۰',
+    oldPrice: '۲,۵۰۰',
     rating: 4.9,
     badge: 'پرفروش',
     category: 'شعر و ادبیات',
@@ -65,8 +65,8 @@ const books = [
     id: 6,
     title: 'قدرت عادت',
     author: 'چارلز داهیگ',
-    price: '۹۵,۰۰۰',
-    oldPrice: '۱۳۰,۰۰۰',
+    price: '۹۵۰',
+    oldPrice: '۱,۳۰۰',
     rating: 4.6,
     badge: 'جدید',
     category: 'روانشناسی',
@@ -77,8 +77,8 @@ const books = [
     id: 7,
     title: 'هنر شفاف اندیشیدن',
     author: 'رولف دوبلی',
-    price: '۷۵,۰۰۰',
-    oldPrice: '۱۱۰,۰۰۰',
+    price: '۷۵۰',
+    oldPrice: '۱,۱۰۰',
     rating: 4.7,
     badge: 'جدید',
     category: 'روانشناسی',
@@ -87,10 +87,10 @@ const books = [
   },
   {
     id: 8,
-    title: 'تاریخ ایران',
-    author: 'عباس اقبال',
-    price: '۲۲۰,۰۰۰',
-    oldPrice: '۳۰۰,۰۰۰',
+    title: 'تاریخ افغانستان',
+    author: 'مراد علی مراد',
+    price: '۲,۲۰۰',
+    oldPrice: '۳,۰۰۰',
     rating: 4.4,
     badge: 'پرفروش',
     category: 'تاریخ',
@@ -112,7 +112,7 @@ const Books: React.FC = () => {
         <div className="text-center mb-12">
           <h2 className="section-title mx-auto">مجموعه کتاب‌ها</h2>
           <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
-            بهترین و جدیدترین کتاب‌ها را با قیمت مناسب تهیه کنید
+            بهترین و جدیدترین کتاب‌ها را با قیمت مناسب خریداری کنید
           </p>
         </div>
 
@@ -139,7 +139,7 @@ const Books: React.FC = () => {
               }`}
             >
               <i className="fas fa-sparkles ml-2"></i>
-              جدیدترین‌ها
+              تازه‌وارد‌ها
             </button>
           </div>
         </div>
@@ -201,7 +201,7 @@ const Books: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-lg font-bold text-amber-600">{book.price}</span>
-                    <span className="text-xs text-gray-500 mr-1">تومان</span>
+                    <span className="text-xs text-gray-500 mr-1">افغانی</span>
                   </div>
                   <span className="text-sm text-gray-400 line-through">{book.oldPrice}</span>
                 </div>

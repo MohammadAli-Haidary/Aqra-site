@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 
 const galleryItems = [
-  { id: 1, emoji: '📚', title: 'قفسه ادبیات', category: 'فروشگاه' },
+  { id: 1, emoji: '📚', title: 'صنف ادبیات', category: 'فروشگاه' },
   { id: 2, emoji: '📖', title: 'بخش کودکان', category: 'فروشگاه' },
-  { id: 3, emoji: '🏛️', title: 'نمای بیرونی', category: 'فروشگاه' },
+  { id: 3, emoji: '🏛️', title: 'نمای بیرونی فروشگاه', category: 'فروشگاه' },
   { id: 4, emoji: '📕', title: 'کتاب‌های کلاسیک', category: 'کتاب' },
   { id: 5, emoji: '🎨', title: 'کتاب‌های هنری', category: 'کتاب' },
   { id: 6, emoji: '📝', title: 'لوازم تحریر', category: 'محصولات' },
-  { id: 7, emoji: '☕', title: 'کافه کتاب', category: 'فضا' },
-  { id: 8, emoji: '🎭', title: 'رویداد فرهنگی', category: 'رویداد' },
-  { id: 9, emoji: '📗', title: 'کتاب‌های جدید', category: 'کتاب' },
+  { id: 7, emoji: '☕', title: 'قرائت‌خانه', category: 'فضا' },
+  { id: 8, emoji: '🎭', title: 'محفل ادبی', category: 'رویداد' },
+  { id: 9, emoji: '📗', title: 'کتاب‌های تازه', category: 'کتاب' },
 ];
 
 const galleryColors = [

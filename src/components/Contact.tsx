@@ -19,25 +19,25 @@ const Contact: React.FC = () => {
     {
       icon: 'fas fa-location-dot',
       title: 'آدرس',
-      detail: 'تهران، خیابان انقلاب، پلاک ۱۲۳',
+      detail: 'کابل، سرک اصلی دارالامان، نمره ۴۵، نزد مسجد جامع',
       color: 'from-rose-500 to-rose-600',
     },
     {
       icon: 'fas fa-phone',
-      title: 'تلفن',
-      detail: '۰۲۱-۱۲۳۴۵۶۷۸',
+      title: 'شماره تماس',
+      detail: '+۹۳ ۷۰ ۱۲۳ ۴۵۶۷',
       color: 'from-emerald-500 to-emerald-600',
     },
     {
       icon: 'fas fa-envelope',
       title: 'ایمیل',
-      detail: 'info@egra-book.ir',
+      detail: 'info@egra-book.af',
       color: 'from-blue-500 to-blue-600',
     },
     {
       icon: 'fas fa-clock',
       title: 'ساعات کاری',
-      detail: 'شنبه تا پنجشنبه: ۹ صبح تا ۹ شب',
+      detail: 'شنبه تا پنجشنبه: ۸ صبح تا ۸ شب | جمعه: ۲ بعد از ظهر تا ۸ شب',
       color: 'from-amber-500 to-amber-600',
     },
   ];
@@ -48,7 +48,7 @@ const Contact: React.FC = () => {
         <div className="text-center mb-16">
           <h2 className="section-title mx-auto">ارتباط با ما</h2>
           <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
-            سوالی دارید؟ ما آماده پاسخگویی هستیم. با ما در تماس باشید
+            سوالی دارید؟ ما آماده پاسخگویی هستیم. با ما در ارتباط باشید
           </p>
         </div>
 
@@ -73,13 +73,13 @@ const Contact: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">شماره تماس</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">شماره تلفن</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition-all"
-                    placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                    placeholder="۰۷۰ ۱۲۳ ۴۵۶۷"
                     required
                   />
                 </div>
@@ -160,7 +160,7 @@ const Contact: React.FC = () => {
                   <i className="fab fa-whatsapp text-green-500 text-xl"></i>
                 </a>
                 <a href="#" className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg hover:scale-110 transition-all duration-300">
-                  <i className="fab fa-twitter text-sky-500 text-xl"></i>
+                  <i className="fab fa-facebook text-blue-700 text-xl"></i>
                 </a>
               </div>
             </div>
@@ -170,8 +170,8 @@ const Contact: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-blue-50 opacity-50"></div>
               <div className="text-center relative z-10">
                 <i className="fas fa-map-marked-alt text-4xl text-amber-600 mb-3"></i>
-                <p className="text-gray-600 font-medium">نقشه موقعیت فروشگاه</p>
-                <p className="text-sm text-gray-500">تهران، خیابان انقلاب</p>
+                <p className="text-gray-600 font-medium">نقشه موقعیت کتاب‌فروشی</p>
+                <p className="text-sm text-gray-500">کابل، سرک دارالامان</p>
               </div>
             </div>
           </div>

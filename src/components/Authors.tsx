@@ -1,12 +1,12 @@
 import React from 'react';
 
 const authors = [
-  { name: 'صادق هدایت', books: 12, emoji: '👨‍💼' },
-  { name: 'محمود دولت‌آبادی', books: 8, emoji: '👨‍🎓' },
-  { name: 'فروغ فرخزاد', books: 5, emoji: '👩‍💼' },
+  { name: 'استاد خالد حسین', books: 5, emoji: '👨‍💼' },
+  { name: 'سهراب سهرابی', books: 8, emoji: '👨‍🎓' },
+  { name: 'پروین اعتصامی', books: 4, emoji: '👩‍💼' },
   { name: 'احمد شاملو', books: 15, emoji: '👨‍🏫' },
-  { name: 'سیمین دانشور', books: 7, emoji: '👩‍🎓' },
-  { name: 'مولانا', books: 20, emoji: '🧙‍♂️' },
+  { name: 'نادر نادرپور', books: 7, emoji: '👨‍🎓' },
+  { name: 'مولانا جلال‌الدین', books: 20, emoji: '🧙‍♂️' },
 ];
 
 const Authors: React.FC = () => {
@@ -16,7 +16,7 @@ const Authors: React.FC = () => {
         <div className="text-center mb-16">
           <h2 className="section-title mx-auto">نویسندگان برتر</h2>
           <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
-            آثار نویسندگان محبوب و برجسته ایرانی و جهان
+            آثار نویسندگان محبوب و برجسته افغانستان و جهان
           </p>
         </div>
 

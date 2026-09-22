@@ -61,7 +61,7 @@ const SpecialOffer: React.FC = () => {
                 <span className="text-amber-200">تا ۵۰٪ تخفیف</span>
               </h2>
               <p className="text-white/80 text-lg mb-8">
-                فرصت را از دست ندهید! بهترین کتاب‌ها با تخفیف‌های باورنکردنی
+                فرصت را از دست ندهید! بهترین کتاب‌ها با تخفیف‌های باورنکردنی - ارسال به تمام ولایات افغانستان
               </p>
 
               {/* Countdown */}
