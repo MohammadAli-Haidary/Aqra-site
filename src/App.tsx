@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { DataProvider } from './store/DataContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -11,60 +12,59 @@ import Gallery from './components/Gallery';
 import Testimonials from './components/Testimonials';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import AdminPanel from './components/AdminPanel';
 
 const App: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-white" dir="rtl">
-      <Navbar />
-      <Hero />
-      <Features />
-      <Categories />
-      <Books />
-      <SpecialOffer />
-      <About />
-      <Authors />
-      <Gallery />
-      <Testimonials />
-      <Contact />
-      <Footer />
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
-      {/* Back to Top Button */}
-      <BackToTop />
-    </div>
-  );
-};
-
-const BackToTop: React.FC = () => {
-  const [isVisible, setIsVisible] = React.useState(false);
-
-  React.useEffect(() => {
-    const toggleVisibility = () => {
-      if (window.scrollY > 500) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 500);
     };
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
-  };
-
   return (
-    <button
-      onClick={scrollToTop}
-      className={`fixed bottom-8 left-8 z-50 w-14 h-14 bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-amber-700 transition-all duration-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-      }`}
-    >
-      <i className="fas fa-arrow-up text-lg"></i>
-    </button>
+    <DataProvider>
+      <div className="min-h-screen bg-white" dir="rtl">
+        <Navbar />
+        <Hero />
+        <Features />
+        <Categories />
+        <Books />
+        <SpecialOffer />
+        <About />
+        <Authors />
+        <Gallery />
+        <Testimonials />
+        <Contact />
+        <Footer />
+
+        {/* Back to Top */}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={`fixed bottom-8 left-8 z-40 w-14 h-14 bg-teal-800 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-teal-900 transition-all duration-300 ${
+            showBackToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+          }`}
+        >
+          <i className="fas fa-arrow-up text-lg"></i>
+        </button>
+
+        {/* Admin Panel Button */}
+        <button
+          onClick={() => setIsAdminOpen(true)}
+          className="fixed bottom-8 right-8 z-40 w-14 h-14 bg-gray-800 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-teal-800 transition-all duration-300 group"
+          title="پنل مدیریت"
+        >
+          <i className="fas fa-cog text-lg group-hover:rotate-90 transition-transform duration-300"></i>
+        </button>
+
+        {/* Admin Panel */}
+        <AdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+      </div>
+    </DataProvider>
   );
 };
 

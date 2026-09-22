@@ -1,36 +1,28 @@
 import React, { useState } from 'react';
-
-const galleryItems = [
-  { id: 1, emoji: '📚', title: 'صنف ادبیات', category: 'فروشگاه' },
-  { id: 2, emoji: '📖', title: 'بخش کودکان', category: 'فروشگاه' },
-  { id: 3, emoji: '🏛️', title: 'نمای بیرونی فروشگاه', category: 'فروشگاه' },
-  { id: 4, emoji: '📕', title: 'کتاب‌های کلاسیک', category: 'کتاب' },
-  { id: 5, emoji: '🎨', title: 'کتاب‌های هنری', category: 'کتاب' },
-  { id: 6, emoji: '📝', title: 'لوازم تحریر', category: 'محصولات' },
-  { id: 7, emoji: '☕', title: 'قرائت‌خانه', category: 'فضا' },
-  { id: 8, emoji: '🎭', title: 'محفل ادبی', category: 'رویداد' },
-  { id: 9, emoji: '📗', title: 'کتاب‌های تازه', category: 'کتاب' },
-];
+import { useData } from '../store/DataContext';
 
 const galleryColors = [
-  'from-amber-100 to-amber-200',
+  'from-teal-100 to-teal-200',
   'from-rose-100 to-rose-200',
   'from-blue-100 to-blue-200',
   'from-emerald-100 to-emerald-200',
   'from-purple-100 to-purple-200',
   'from-indigo-100 to-indigo-200',
-  'from-teal-100 to-teal-200',
+  'from-cyan-100 to-cyan-200',
   'from-pink-100 to-pink-200',
   'from-orange-100 to-orange-200',
 ];
 
+const defaultEmojis = ['📚', '📖', '🏛️', '📕', '🎨', '📝', '☕', '🎭', '📗', '📙', '📓', '📔'];
+
 const Gallery: React.FC = () => {
+  const { data } = useData();
   const [selectedCategory, setSelectedCategory] = useState('همه');
-  const categories = ['همه', 'فروشگاه', 'کتاب', 'محصولات', 'فضا', 'رویداد'];
+  const categories = ['همه', ...new Set(data.gallery.map(item => item.category))];
 
   const filteredItems = selectedCategory === 'همه' 
-    ? galleryItems 
-    : galleryItems.filter(item => item.category === selectedCategory);
+    ? data.gallery 
+    : data.gallery.filter(item => item.category === selectedCategory);
 
   return (
     <section id="gallery" className="py-20 bg-gray-50">
@@ -50,8 +42,8 @@ const Gallery: React.FC = () => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-5 py-2 rounded-full font-medium transition-all duration-300 ${
                 selectedCategory === cat
-                  ? 'bg-amber-600 text-white shadow-lg'
-                  : 'bg-white text-gray-600 hover:bg-amber-50 hover:text-amber-600 border border-gray-200'
+                  ? 'bg-teal-800 text-white shadow-lg'
+                  : 'bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-800 border border-gray-200'
               }`}
             >
               {cat}
@@ -66,23 +58,26 @@ const Gallery: React.FC = () => {
               key={item.id}
               className={`relative rounded-2xl overflow-hidden h-64 bg-gradient-to-br ${galleryColors[index % galleryColors.length]} group cursor-pointer card-hover`}
             >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-8xl group-hover:scale-125 transition-transform duration-500">
-                  {item.emoji}
-                </span>
-              </div>
+              {item.imageUrl ? (
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-8xl group-hover:scale-125 transition-transform duration-500">
+                    {defaultEmojis[index % defaultEmojis.length]}
+                  </span>
+                </div>
+              )}
               
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                 <div>
                   <h3 className="text-white font-bold text-lg">{item.title}</h3>
                   <p className="text-white/80 text-sm">{item.category}</p>
                 </div>
-              </div>
-
-              {/* Zoom Icon */}
-              <div className="absolute top-4 left-4 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <i className="fas fa-search-plus text-amber-600"></i>
               </div>
             </div>
           ))}
