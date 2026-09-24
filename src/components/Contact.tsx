@@ -1,11 +1,26 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{ type: string; message: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('پیام شما با موفقیت ارسال شد! به زودی با شما تماس خواهیم گرفت.');
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    setLoading(true);
+    setNotification(null);
+
+    try {
+      await api.submitContact(formData);
+      setNotification({ type: 'success', message: 'پیام شما با موفقیت ارسال شد! به زودی با شما تماس خواهیم گرفت.' });
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error.message || 'خطا در ارسال پیام. لطفاً دوباره تلاش کنید.' });
+    } finally {
+      setLoading(false);
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
   const contactInfo = [
@@ -29,6 +44,16 @@ const Contact: React.FC = () => {
             <h3 className="text-2xl font-bold text-gray-800 mb-6">
               <i className="fas fa-paper-plane text-teal-700 ml-3"></i> ارسال پیام
             </h3>
+            
+            {notification && (
+              <div className={`mb-4 px-4 py-3 rounded-xl text-sm ${
+                notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                <i className={`fas ${notification.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} ml-2`}></i>
+                {notification.message}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -58,8 +83,12 @@ const Contact: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">پیام شما</label>
                 <textarea value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} rows={4} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-teal-600 focus:ring-2 focus:ring-teal-200 outline-none transition-all resize-none" placeholder="پیام خود را بنویسید..." required></textarea>
               </div>
-              <button type="submit" className="btn-primary w-full text-center">
-                <i className="fas fa-paper-plane ml-2"></i> ارسال پیام
+              <button type="submit" disabled={loading} className="btn-primary w-full text-center disabled:opacity-50">
+                {loading ? (
+                  <><i className="fas fa-spinner fa-spin ml-2"></i> در حال ارسال...</>
+                ) : (
+                  <><i className="fas fa-paper-plane ml-2"></i> ارسال پیام</>
+                )}
               </button>
             </form>
           </div>

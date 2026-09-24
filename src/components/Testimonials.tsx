@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useData } from '../store/DataContext';
+import api from '../services/api';
 
 const Testimonials: React.FC = () => {
   const { data } = useData();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{ type: string; message: string } | null>(null);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setNotification(null);
+
+    try {
+      await api.subscribe(email);
+      setNotification({ type: 'success', message: 'شما با موفقیت در خبرنامه عضو شدید!' });
+      setEmail('');
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error.message || 'خطا در عضویت' });
+    } finally {
+      setLoading(false);
+      setTimeout(() => setNotification(null), 5000);
+    }
+  };
 
   return (
     <section className="py-20 bg-gradient-to-br from-teal-800 via-teal-900 to-teal-800 relative overflow-hidden">
@@ -42,12 +63,37 @@ const Testimonials: React.FC = () => {
           <p className="text-white/70 mb-8 max-w-xl mx-auto">
             برای اطلاع از جدیدترین کتاب‌ها و تخفیف‌های ویژه، ایمیل خود را وارد کنید
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
-            <input type="email" placeholder="ایمیل خود را وارد کنید..." className="flex-1 px-6 py-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 outline-none focus:border-teal-300 transition-colors" />
-            <button className="bg-white text-teal-800 font-bold px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg">
-              <i className="fas fa-bell ml-2"></i> عضویت
+
+          {notification && (
+            <div className={`mb-4 px-4 py-3 rounded-xl text-sm max-w-lg mx-auto ${
+              notification.type === 'success' ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30' : 'bg-red-500/20 text-red-200 border border-red-400/30'
+            }`}>
+              <i className={`fas ${notification.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} ml-2`}></i>
+              {notification.message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ایمیل خود را وارد کنید..." 
+              className="flex-1 px-6 py-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 outline-none focus:border-teal-300 transition-colors" 
+              required
+            />
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="bg-white text-teal-800 font-bold px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg disabled:opacity-50"
+            >
+              {loading ? (
+                <i className="fas fa-spinner fa-spin"></i>
+              ) : (
+                <><i className="fas fa-bell ml-2"></i> عضویت</>
+              )}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </section>
