@@ -3,9 +3,10 @@ import api from '../services/api';
 
 interface AdminLoginProps {
   onLogin: () => void;
+  onSwitchToRegister?: () => void;
 }
 
-const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
+const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onSwitchToRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -88,7 +89,21 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+        {onSwitchToRegister && (
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              ادمین جدید هستید؟{' '}
+              <button
+                onClick={onSwitchToRegister}
+                className="text-teal-700 font-medium hover:text-teal-900 transition-colors"
+              >
+                ثبت‌نام کنید
+              </button>
+            </p>
+          </div>
+        )}
+
+        <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
           <p className="text-amber-800 text-sm">
             <i className="fas fa-info-circle ml-2"></i>
             <strong>راهنما:</strong> ابتدا سرور Backend را اجرا کنید:
