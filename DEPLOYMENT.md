@@ -3,9 +3,9 @@
 ## 📋 فهرست
 1. [پیش‌نیازها](#پیش‌نیازها)
 2. [نصب محلی (Local)](#نصب-محلی)
-3. [هاست روی VPS](#هاست-روی-vps)
-4. [هاست روی cPanel](#هاست-روی-cpanel)
-5. [هاست روی سرویس‌های ابری](#هاست-روی-سرویس-های-ابری)
+3. [MongoDB Setup](#mongodb-setup)
+4. [هاست روی VPS](#هاست-روی-vps)
+5. [هاست روی MongoDB Atlas](#هاست-روی-mongodb-atlas)
 6. [دامنه و SSL](#دامنه-و-ssl)
 
 ---
@@ -13,6 +13,7 @@
 ## پیش‌نیازها
 
 - Node.js نسخه 18 یا بالاتر
+- MongoDB (Local یا Atlas)
 - npm یا yarn
 - Git
 
@@ -44,6 +45,7 @@ cp .env.example .env
 فایل `.env` را ویرایش کنید:
 ```env
 PORT=5000
+MONGODB_URI=mongodb://localhost:27017/egra_bookstore
 JWT_SECRET=یک-رمز-امن-و-طولانی-اینجا
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=رمز-عبور-امن
@@ -73,13 +75,54 @@ npm run dev
 
 ---
 
+## MongoDB Setup
+
+### MongoDB Local
+
+**Windows:**
+1. از [mongodb.com](https://www.mongodb.com/try/download/community) دانلود کنید
+2. نصب کنید
+3. به صورت خودکار اجرا می‌شود
+
+**Mac:**
+```bash
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
+```
+
+**Linux (Ubuntu):**
+```bash
+sudo apt-get install -y mongodb-org
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+**MongoDB Compass:**
+1. از [mongodb.com/compass](https://www.mongodb.com/products/compass) دانلود کنید
+2. اتصال: `mongodb://localhost:27017`
+3. دیتابیس `egra_bookstore` را مشاهده کنید
+
+### MongoDB Atlas (Cloud - پیشنهادی)
+
+1. در [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas/register) ثبت‌نام کنید
+2. یک Cluster رایگان (M0) بسازید
+3. از "Database Access" یک کاربر بسازید
+4. از "Network Access" IP خود را whitelist کنید (یا 0.0.0.0/0 برای همه)
+5. از "Connect" > "Connect your application" رشته اتصال را کپی کنید
+6. در `.env` قرار دهید:
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/egra_bookstore?retryWrites=true&w=majority
+```
+
+---
+
 ## هاست روی VPS
 
 ### سرورهای پیشنهادی:
 - DigitalOcean ($6/ماه)
 - Hetzner (€4/ماه)
 - Vultr ($6/ماه)
-- سرورهای افغانستان (Afghan Wireless, MTN)
 
 ### مراحل نصب:
 
@@ -93,6 +136,14 @@ apt update && apt upgrade -y
 # نصب Node.js
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 apt-get install -y nodejs
+
+# نصب MongoDB
+wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+apt update
+apt install -y mongodb-org
+systemctl start mongod
+systemctl enable mongod
 
 # نصب Git
 apt install git -y
@@ -171,87 +222,38 @@ systemctl restart nginx
 
 ---
 
-## هاست روی cPanel
+## هاست روی MongoDB Atlas
 
-### 1. آپلود فایل‌ها
+### مزایا:
+- ✅ رایگان تا 512MB
+- ✅ Backup خودکار
+- ✅ مانیتورینگ
+- ✅ مقیاس‌پذیری آسان
 
-- فایل‌های `dist/` را در `public_html` آپلود کنید
-- فولدر `server/` را در `public_html/server` آپلود کنید
+### مراحل:
 
-### 2. نصب Backend در Terminal cPanel
+1. **ساخت Cluster:**
+   - وارد [cloud.mongodb.com](https://cloud.mongodb.com) شوید
+   - "Build a Database" را بزنید
+   - M0 FREE را انتخاب کنید
+   - Provider: AWS
+   - Region: نزدیک‌ترین به افغانستان (مثلاً Mumbai یا Bahrain)
 
-```bash
-cd ~/public_html/server
-npm install
-cp .env.example .env
-nano .env
-npm run seed
-```
+2. **ساخت Database User:**
+   - Database Access > Add New Database User
+   - Username: `egra_admin`
+   - Password: (یک رمز قوی)
+   - Role: Read and write to any database
 
-### 3. ایجاد Node.js App در cPanel
+3. **Network Access:**
+   - Network Access > Add IP Address
+   - برای تست: `Allow Access from Anywhere` (0.0.0.0/0)
+   - برای تولید: IP سرور خود را اضافه کنید
 
-1. وارد cPanel شوید
-2. به بخش "Setup Node.js app" بروید
-3. "Create Application" را بزنید
-4. تنظیمات:
-   - Node version: 18.x
-   - Application mode: Production
-   - Application root: public_html/server
-   - Application URL: egra-book.af
-   - Application startup file: index.js
-
-### 4. تنظیم .htaccess
-
-```apache
-RewriteEngine On
-RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
-RewriteRule ^uploads/(.*)$ http://127.0.0.1:5000/uploads/$1 [P,L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
-```
-
----
-
-## هاست روی سرویس‌های ابری
-
-### Railway.app
-
-1. پروژه را به GitHub push کنید
-2. در Railway یک پروژه جدید بسازید
-3. Repository را متصل کنید
-4. Root Directory: `server`
-5. Environment Variables:
-   - `PORT`: 5000
-   - `JWT_SECRET`: your-secret
-   - `ADMIN_USERNAME`: admin
-   - `ADMIN_PASSWORD`: your-password
-6. Deploy!
-
-### Render.com
-
-1. New Web Service
-2. Connect GitHub
-3. Root Directory: `server`
-4. Build Command: `npm install`
-5. Start Command: `npm start`
-6. Environment Variables تنظیم کنید
-
-### Fly.io
-
-```bash
-# نصب Fly CLI
-curl -L https://fly.io/install.sh | sh
-
-# Login
-fly auth login
-
-# Init
-fly launch
-
-# Deploy
-fly deploy
-```
+4. **Get Connection String:**
+   - Connect > Connect your application
+   - کپی کنید: `mongodb+srv://egra_admin:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority`
+   - در `.env` قرار دهید
 
 ---
 
@@ -286,7 +288,8 @@ certbot renew --dry-run
 - [ ] فعال‌سازی HTTPS
 - [ ] تنظیم Firewall (ufw)
 - [ ] محدود کردن Rate Limit
-- [ ] Backup منظم از دیتابیس
+- [ ] Backup منظم از MongoDB
+- [ ] MongoDB Atlas: IP Whitelist
 
 ### Firewall:
 ```bash
@@ -294,6 +297,19 @@ ufw allow 22    # SSH
 ufw allow 80    # HTTP
 ufw allow 443   # HTTPS
 ufw enable
+```
+
+### MongoDB Security:
+```bash
+# فعال‌سازی احراز هویت
+nano /etc/mongod.conf
+```
+```yaml
+security:
+  authorization: enabled
+```
+```bash
+systemctl restart mongod
 ```
 
 ---
@@ -308,14 +324,21 @@ pm2 restart all     # ریستارت
 pm2 monit           # مانیتور
 ```
 
-### Backup دیتابیس:
+### MongoDB Backup:
 ```bash
 # Backup
-cp server/database/egra.db server/database/egra-backup-$(date +%Y%m%d).db
+mongodump --uri="mongodb://localhost:27017/egra_bookstore" --out=/var/www/backups/egra-$(date +%Y%m%d)
+
+# Restore
+mongorestore --uri="mongodb://localhost:27017/egra_bookstore" /var/www/backups/egra-20240101/egra_bookstore
 
 # Cron job (هر روز ساعت 3 صبح)
-0 3 * * * cp /var/www/egra-bookstore/server/database/egra.db /var/www/backups/egra-$(date +\%Y\%m\%d).db
+0 3 * * * mongodump --uri="mongodb://localhost:27017/egra_bookstore" --out=/var/www/backups/egra-$(date +\%Y\%m\%d)
 ```
+
+### MongoDB Atlas Backup:
+- خودکار هر 6 ساعت (رایگان)
+- Point-in-time recovery (پولی)
 
 ---
 
