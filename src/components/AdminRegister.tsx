@@ -50,8 +50,8 @@ const AdminRegister: React.FC<AdminRegisterProps> = ({ onRegister, onSwitchToLog
   };
 
   return (
-    <div className="modal-overlay" onClick={() => {}}>
-      <div className="bg-white rounded-2xl p-8 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-teal-700 to-teal-900 rounded-xl flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-user-plus text-white text-2xl"></i>
