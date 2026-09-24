@@ -1,130 +1,139 @@
 /**
  * Testimonials Routes
+ * مسیرهای نظرات
  */
 
 const express = require('express');
 const router = express.Router();
-const { getDatabase } = require('../database');
+const Testimonial = require('../models/Testimonial');
 const authMiddleware = require('../middleware/auth');
 
 // Get approved testimonials (public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const db = getDatabase();
-    const testimonials = db.prepare('SELECT * FROM testimonials WHERE is_approved = 1 ORDER BY created_at DESC').all();
-    res.json({ status: 'success', count: testimonials.length, data: testimonials });
+    const testimonials = await Testimonial.find({ is_approved: true }).sort({ createdAt: -1 });
+    res.json({ status: 'success', count: testimonials.length,  testimonials });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Get all testimonials (admin)
-router.get('/all', authMiddleware, (req, res) => {
+router.get('/all', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const testimonials = db.prepare('SELECT * FROM testimonials ORDER BY created_at DESC').all();
-    res.json({ status: 'success', count: testimonials.length, data: testimonials });
+    const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+    res.json({ status: 'success', count: testimonials.length,  testimonials });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Submit testimonial (public - needs approval)
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const db = getDatabase();
     const { name, role, text, rating, avatar } = req.body;
 
     if (!name || !text) {
       return res.status(400).json({ status: 'error', message: 'نام و متن نظر الزامی است' });
     }
 
-    const result = db.prepare(`
-      INSERT INTO testimonials (name, role, text, rating, avatar, is_approved)
-      VALUES (?, ?, ?, ?, ?, 0)
-    `).run(name, role || null, text, rating || 5, avatar || '👤');
+    const testimonial = new Testimonial({
+      name,
+      role,
+      text,
+      rating: rating || 5,
+      avatar: avatar || '👤',
+      is_approved: false
+    });
 
-    const newTestimonial = db.prepare('SELECT * FROM testimonials WHERE id = ?').get(result.lastInsertRowid);
+    await testimonial.save();
 
     res.status(201).json({
       status: 'success',
       message: 'نظر شما ثبت شد و پس از تأیید نمایش داده خواهد شد',
-      data: newTestimonial
+       testimonial
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // Approve testimonial (admin)
-router.patch('/:id/approve', authMiddleware, (req, res) => {
+router.patch('/:id/approve', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    db.prepare('UPDATE testimonials SET is_approved = 1 WHERE id = ?').run(req.params.id);
-    res.json({ status: 'success', message: 'نظر تأیید شد' });
+    const testimonial = await Testimonial.findByIdAndUpdate(
+      req.params.id,
+      { is_approved: true },
+      { new: true }
+    );
+
+    if (!testimonial) {
+      return res.status(404).json({ status: 'error', message: 'نظر یافت نشد' });
+    }
+
+    res.json({ status: 'success', message: 'نظر تأیید شد',  testimonial });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
-// Create testimonial (admin)
-router.post('/admin', authMiddleware, (req, res) => {
+// Create testimonial (admin - auto approved)
+router.post('/admin', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
     const { name, role, text, rating, avatar } = req.body;
 
-    const result = db.prepare(`
-      INSERT INTO testimonials (name, role, text, rating, avatar, is_approved)
-      VALUES (?, ?, ?, ?, ?, 1)
-    `).run(name, role || null, text, rating || 5, avatar || '👤');
+    const testimonial = new Testimonial({
+      name,
+      role,
+      text,
+      rating: rating || 5,
+      avatar: avatar || '👤',
+      is_approved: true
+    });
 
-    const newTestimonial = db.prepare('SELECT * FROM testimonials WHERE id = ?').get(result.lastInsertRowid);
+    await testimonial.save();
 
     res.status(201).json({
       status: 'success',
       message: 'نظر با موفقیت اضافه شد',
-      data: newTestimonial
+       testimonial
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // Update testimonial (admin)
-router.put('/:id', authMiddleware, (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
     const { name, role, text, rating, avatar, is_approved } = req.body;
 
-    const existing = db.prepare('SELECT * FROM testimonials WHERE id = ?').get(req.params.id);
-    if (!existing) {
+    const updated = await Testimonial.findByIdAndUpdate(
+      req.params.id,
+      { name, role, text, rating, avatar, is_approved },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
       return res.status(404).json({ status: 'error', message: 'نظر یافت نشد' });
     }
-
-    db.prepare(`
-      UPDATE testimonials SET name=?, role=?, text=?, rating=?, avatar=?, is_approved=?
-      WHERE id=?
-    `).run(name, role, text, rating, avatar, is_approved !== undefined ? (is_approved ? 1 : 0) : existing.is_approved, req.params.id);
-
-    const updated = db.prepare('SELECT * FROM testimonials WHERE id = ?').get(req.params.id);
 
     res.json({
       status: 'success',
       message: 'نظر با موفقیت ویرایش شد',
-      data: updated
+       updated
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // Delete testimonial (admin)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const result = db.prepare('DELETE FROM testimonials WHERE id = ?').run(req.params.id);
+    const testimonial = await Testimonial.findByIdAndDelete(req.params.id);
 
-    if (result.changes === 0) {
+    if (!testimonial) {
       return res.status(404).json({ status: 'error', message: 'نظر یافت نشد' });
     }
 

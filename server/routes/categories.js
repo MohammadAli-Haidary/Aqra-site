@@ -1,105 +1,102 @@
 /**
  * Categories Routes
+ * مسیرهای دسته‌بندی‌ها
  */
 
 const express = require('express');
 const router = express.Router();
-const { getDatabase } = require('../database');
+const Category = require('../models/Category');
+const Book = require('../models/Book');
 const authMiddleware = require('../middleware/auth');
 
 // Get all categories (public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const db = getDatabase();
-    const categories = db.prepare('SELECT * FROM categories ORDER BY sort_order ASC, name ASC').all();
-
-    res.json({ status: 'success', count: categories.length, data: categories });
+    const categories = await Category.find().sort({ sort_order: 1, name: 1 });
+    res.json({ status: 'success', count: categories.length,  categories });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
-// Get single category
-router.get('/:id', (req, res) => {
+// Get single category with books
+router.get('/:id', async (req, res) => {
   try {
-    const db = getDatabase();
-    const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
+    const category = await Category.findById(req.params.id);
 
     if (!category) {
       return res.status(404).json({ status: 'error', message: 'دسته‌بندی یافت نشد' });
     }
 
     // Get books in this category
-    const books = db.prepare('SELECT * FROM books WHERE category = ?').all(category.name);
+    const books = await Book.find({ category: category.name });
 
-    res.json({ status: 'success', data: { ...category, books } });
+    res.json({ status: 'success', data: { ...category.toObject(), books } });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Create category (admin)
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const { name, icon, count, description } = req.body;
+    const { name, icon, count, description, sort_order } = req.body;
 
     if (!name) {
       return res.status(400).json({ status: 'error', message: 'نام دسته‌بندی الزامی است' });
     }
 
-    const result = db.prepare(`
-      INSERT INTO categories (name, icon, count, description)
-      VALUES (?, ?, ?, ?)
-    `).run(name, icon || 'fas fa-book', count || 0, description || null);
+    const category = new Category({
+      name,
+      icon: icon || 'fas fa-book',
+      count: count || 0,
+      description,
+      sort_order: sort_order || 0
+    });
 
-    const newCategory = db.prepare('SELECT * FROM categories WHERE id = ?').get(result.lastInsertRowid);
+    await category.save();
 
     res.status(201).json({
       status: 'success',
       message: 'دسته‌بندی با موفقیت اضافه شد',
-      data: newCategory
+       category
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // Update category (admin)
-router.put('/:id', authMiddleware, (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
     const { name, icon, count, description, sort_order } = req.body;
 
-    const existing = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
-    if (!existing) {
+    const updated = await Category.findByIdAndUpdate(
+      req.params.id,
+      { name, icon, count, description, sort_order },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
       return res.status(404).json({ status: 'error', message: 'دسته‌بندی یافت نشد' });
     }
-
-    db.prepare(`
-      UPDATE categories SET name=?, icon=?, count=?, description=?, sort_order=?
-      WHERE id=?
-    `).run(name, icon, count, description || null, sort_order || 0, req.params.id);
-
-    const updated = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
 
     res.json({
       status: 'success',
       message: 'دسته‌بندی با موفقیت ویرایش شد',
-      data: updated
+       updated
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
 // Delete category (admin)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const result = db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
+    const category = await Category.findByIdAndDelete(req.params.id);
 
-    if (result.changes === 0) {
+    if (!category) {
       return res.status(404).json({ status: 'error', message: 'دسته‌بندی یافت نشد' });
     }
 

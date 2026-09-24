@@ -1,19 +1,19 @@
 {
   "name": "egra-bookstore-backend",
   "version": "1.0.0",
-  "description": "Backend API for Egra Bookstore - کتاب‌فروشی اقرأ",
+  "description": "Backend API for Egra Bookstore - کتاب‌فروشی اقرأ - MongoDB",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "seed": "node database.js seed"
+    "seed": "node database/seed.js"
   },
-  "keywords": ["bookstore", "api", "express", "afghanistan"],
+  "keywords": ["bookstore", "api", "express", "mongodb", "afghanistan"],
   "author": "Egra Bookstore",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "better-sqlite3": "^9.4.3",
+    "mongoose": "^8.1.1",
     "cors": "^2.8.5",
     "multer": "^1.4.5-lts.1",
     "bcryptjs": "^2.4.3",

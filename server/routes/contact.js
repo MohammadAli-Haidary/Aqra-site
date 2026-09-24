@@ -1,16 +1,16 @@
 /**
  * Contact Routes
+ * مسیرهای تماس
  */
 
 const express = require('express');
 const router = express.Router();
-const { getDatabase } = require('../database');
+const ContactMessage = require('../models/ContactMessage');
 const authMiddleware = require('../middleware/auth');
 
 // Submit contact message (public)
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const db = getDatabase();
     const { name, email, phone, subject, message } = req.body;
 
     if (!name || !email || !message) {
@@ -20,10 +20,15 @@ router.post('/', (req, res) => {
       });
     }
 
-    const result = db.prepare(`
-      INSERT INTO contact_messages (name, email, phone, subject, message)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(name, email, phone || null, subject || null, message);
+    const contactMessage = new ContactMessage({
+      name,
+      email,
+      phone,
+      subject,
+      message
+    });
+
+    await contactMessage.save();
 
     res.status(201).json({
       status: 'success',
@@ -36,16 +41,17 @@ router.post('/', (req, res) => {
 });
 
 // Get all messages (admin)
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const messages = db.prepare('SELECT * FROM contact_messages ORDER BY created_at DESC').all();
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
     
+    const unread = messages.filter(m => !m.is_read).length;
+
     res.json({
       status: 'success',
       count: messages.length,
-      unread: messages.filter(m => !m.is_read).length,
-      data: messages
+      unread,
+       messages
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
@@ -53,23 +59,30 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // Mark message as read (admin)
-router.patch('/:id/read', authMiddleware, (req, res) => {
+router.patch('/:id/read', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    db.prepare('UPDATE contact_messages SET is_read = 1 WHERE id = ?').run(req.params.id);
-    res.json({ status: 'success', message: 'پیام خوانده شد' });
+    const message = await ContactMessage.findByIdAndUpdate(
+      req.params.id,
+      { is_read: true },
+      { new: true }
+    );
+
+    if (!message) {
+      return res.status(404).json({ status: 'error', message: 'پیام یافت نشد' });
+    }
+
+    res.json({ status: 'success', message: 'پیام خوانده شد',  message });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Delete message (admin)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const result = db.prepare('DELETE FROM contact_messages WHERE id = ?').run(req.params.id);
+    const message = await ContactMessage.findByIdAndDelete(req.params.id);
 
-    if (result.changes === 0) {
+    if (!message) {
       return res.status(404).json({ status: 'error', message: 'پیام یافت نشد' });
     }
 

@@ -2,8 +2,7 @@
  * کتاب‌فروشی اقرأ - سرور اصلی
  * Egra Bookstore - Main Server
  * 
- * Backend API for Egra Bookstore
- * Built with Node.js, Express, and SQLite
+ * Backend API with MongoDB
  */
 
 const express = require('express');
@@ -15,6 +14,8 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+const connectDB = require('./database/connection');
+
 // Import routes
 const booksRouter = require('./routes/books');
 const galleryRouter = require('./routes/gallery');
@@ -25,22 +26,19 @@ const newsletterRouter = require('./routes/newsletter');
 const authRouter = require('./routes/auth');
 const settingsRouter = require('./routes/settings');
 
-// Import database initialization
-const { initDatabase } = require('./database');
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Create necessary directories
-const dirs = ['uploads', 'uploads/gallery', 'uploads/books', 'database'];
+const dirs = ['uploads', 'uploads/gallery', 'uploads/books'];
 dirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 });
 
-// Initialize database
-initDatabase();
+// Connect to MongoDB
+connectDB();
 
 // ============ Middleware ============
 
@@ -87,8 +85,9 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'success',
     message: 'کتاب‌فروشی اقرأ - سرور فعال است',
+    database: 'MongoDB',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '2.0.0'
   });
 });
 
@@ -116,11 +115,43 @@ app.use('/api/*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(e => e.message);
+    return res.status(400).json({
+      status: 'error',
+      message: messages.join(', ')
+    });
+  }
+
+  // Mongoose duplicate key error
+  if (err.code === 11000) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'این مقدار قبلاً ثبت شده است'
+    });
+  }
+
   // Multer file size error
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       status: 'error',
       message: 'حجم فایل بیش از حد مجاز است (حداکثر 5MB)'
+    });
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      status: 'error',
+      message: 'توکن نامعتبر است'
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      status: 'error',
+      message: 'توکن منقضی شده است'
     });
   }
 
@@ -144,6 +175,7 @@ app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════');
   console.log('   کتاب‌فروشی اقرأ - سرور بک‌اند');
   console.log('   Egra Bookstore Backend Server');
+  console.log('   Database: MongoDB');
   console.log('═══════════════════════════════════════════');
   console.log(`   🚀 سرور در پورت ${PORT} فعال است`);
   console.log(`   🌐 آدرس: http://localhost:${PORT}`);

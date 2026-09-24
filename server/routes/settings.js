@@ -1,64 +1,62 @@
 /**
- * Site Settings Routes
+ * Settings Routes
+ * مسیرهای تنظیمات
  */
 
 const express = require('express');
 const router = express.Router();
-const { getDatabase } = require('../database');
+const SiteSetting = require('../models/SiteSetting');
+const Book = require('../models/Book');
+const Category = require('../models/Category');
+const Gallery = require('../models/Gallery');
+const Testimonial = require('../models/Testimonial');
+const ContactMessage = require('../models/ContactMessage');
+const NewsletterSubscriber = require('../models/NewsletterSubscriber');
 const authMiddleware = require('../middleware/auth');
 
 // Get all settings (public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const db = getDatabase();
-    const settings = db.prepare('SELECT * FROM site_settings').all();
+    const settings = await SiteSetting.find();
     
     const settingsObj = {};
     settings.forEach(s => {
       settingsObj[s.setting_key] = s.setting_value;
     });
 
-    res.json({ status: 'success', data: settingsObj });
+    res.json({ status: 'success',  settingsObj });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Get single setting
-router.get('/:key', (req, res) => {
+router.get('/:key', async (req, res) => {
   try {
-    const db = getDatabase();
-    const setting = db.prepare('SELECT * FROM site_settings WHERE setting_key = ?').get(req.params.key);
+    const setting = await SiteSetting.findOne({ setting_key: req.params.key });
 
     if (!setting) {
       return res.status(404).json({ status: 'error', message: 'تنظیم یافت نشد' });
     }
 
-    res.json({ status: 'success', data: { key: setting.setting_key, value: setting.setting_value } });
+    res.json({ status: 'success',  { key: setting.setting_key, value: setting.setting_value } });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
 // Update settings (admin)
-router.put('/', authMiddleware, (req, res) => {
+router.put('/', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
     const settings = req.body;
 
-    const updateStmt = db.prepare(`
-      INSERT INTO site_settings (setting_key, setting_value, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(setting_key) DO UPDATE SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
-    `);
-
-    const updateMany = db.transaction((settings) => {
-      for (const [key, value] of Object.entries(settings)) {
-        updateStmt.run(key, value, value);
-      }
-    });
-
-    updateMany(settings);
+    for (const [key, value] of Object.entries(settings)) {
+      await SiteSetting.findOneAndUpdate(
+        { setting_key: key },
+        { setting_value: value },
+        { upsert: true, new: true }
+      );
+    }
 
     res.json({ status: 'success', message: 'تنظیمات با موفقیت ذخیره شد' });
   } catch (error) {
@@ -67,16 +65,15 @@ router.put('/', authMiddleware, (req, res) => {
 });
 
 // Update single setting (admin)
-router.put('/:key', authMiddleware, (req, res) => {
+router.put('/:key', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
     const { value } = req.body;
 
-    db.prepare(`
-      INSERT INTO site_settings (setting_key, setting_value, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(setting_key) DO UPDATE SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
-    `).run(req.params.key, value, value);
+    await SiteSetting.findOneAndUpdate(
+      { setting_key: req.params.key },
+      { setting_value: value },
+      { upsert: true, new: true }
+    );
 
     res.json({ status: 'success', message: 'تنظیم با موفقیت ذخیره شد' });
   } catch (error) {
@@ -85,23 +82,43 @@ router.put('/:key', authMiddleware, (req, res) => {
 });
 
 // Dashboard stats (admin)
-router.get('/dashboard/stats', authMiddleware, (req, res) => {
+router.get('/dashboard/stats', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    
+    const [
+      totalBooks,
+      totalCategories,
+      totalGallery,
+      totalTestimonials,
+      totalMessages,
+      unreadMessages,
+      totalSubscribers,
+      newBooks,
+      bestsellers
+    ] = await Promise.all([
+      Book.countDocuments(),
+      Category.countDocuments(),
+      Gallery.countDocuments(),
+      Testimonial.countDocuments(),
+      ContactMessage.countDocuments(),
+      ContactMessage.countDocuments({ is_read: false }),
+      NewsletterSubscriber.countDocuments({ is_active: true }),
+      Book.countDocuments({ is_new: true }),
+      Book.countDocuments({ badge: 'پرفروش' })
+    ]);
+
     const stats = {
-      totalBooks: db.prepare('SELECT COUNT(*) as count FROM books').get().count,
-      totalCategories: db.prepare('SELECT COUNT(*) as count FROM categories').get().count,
-      totalGallery: db.prepare('SELECT COUNT(*) as count FROM gallery').get().count,
-      totalTestimonials: db.prepare('SELECT COUNT(*) as count FROM testimonials').get().count,
-      totalMessages: db.prepare('SELECT COUNT(*) as count FROM contact_messages').get().count,
-      unreadMessages: db.prepare('SELECT COUNT(*) as count FROM contact_messages WHERE is_read = 0').get().count,
-      totalSubscribers: db.prepare('SELECT COUNT(*) as count FROM newsletter_subscribers WHERE is_active = 1').get().count,
-      newBooks: db.prepare("SELECT COUNT(*) as count FROM books WHERE is_new = 1").get().count,
-      bestsellers: db.prepare("SELECT COUNT(*) as count FROM books WHERE badge = 'پرفروش'").get().count,
+      totalBooks,
+      totalCategories,
+      totalGallery,
+      totalTestimonials,
+      totalMessages,
+      unreadMessages,
+      totalSubscribers,
+      newBooks,
+      bestsellers
     };
 
-    res.json({ status: 'success', data: stats });
+    res.json({ status: 'success',  stats });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }

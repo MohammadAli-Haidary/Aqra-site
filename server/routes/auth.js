@@ -1,16 +1,16 @@
 /**
  * Authentication Routes
+ * مسیرهای احراز هویت
  */
 
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getDatabase } = require('../database');
+const Admin = require('../models/Admin');
 const authMiddleware = require('../middleware/auth');
 
 // Login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -21,8 +21,7 @@ router.post('/login', (req, res) => {
       });
     }
 
-    const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
+    const admin = await Admin.findOne({ username });
 
     if (!admin) {
       return res.status(401).json({
@@ -31,7 +30,7 @@ router.post('/login', (req, res) => {
       });
     }
 
-    const isValidPassword = bcrypt.compareSync(password, admin.password);
+    const isValidPassword = await admin.comparePassword(password);
 
     if (!isValidPassword) {
       return res.status(401).json({
@@ -41,11 +40,12 @@ router.post('/login', (req, res) => {
     }
 
     // Update last login
-    db.prepare('UPDATE admins SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(admin.id);
+    admin.last_login = new Date();
+    await admin.save();
 
     // Generate token
     const token = jwt.sign(
-      { id: admin.id, username: admin.username },
+      { id: admin._id, username: admin.username },
       process.env.JWT_SECRET || 'default-secret',
       { expiresIn: '7d' }
     );
@@ -53,10 +53,10 @@ router.post('/login', (req, res) => {
     res.json({
       status: 'success',
       message: 'ورود موفقیت‌آمیز',
-      data: {
+       {
         token,
         admin: {
-          id: admin.id,
+          id: admin._id,
           username: admin.username,
           email: admin.email,
           full_name: admin.full_name
@@ -73,14 +73,20 @@ router.post('/login', (req, res) => {
 });
 
 // Get current admin info
-router.get('/me', authMiddleware, (req, res) => {
+router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const db = getDatabase();
-    const admin = db.prepare('SELECT id, username, email, full_name, created_at, last_login FROM admins WHERE id = ?').get(req.admin.id);
+    const admin = await Admin.findById(req.admin.id).select('-password');
+
+    if (!admin) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'ادمین یافت نشد'
+      });
+    }
 
     res.json({
       status: 'success',
-      data: admin
+       admin
     });
   } catch (error) {
     res.status(500).json({
@@ -91,22 +97,30 @@ router.get('/me', authMiddleware, (req, res) => {
 });
 
 // Change password
-router.post('/change-password', authMiddleware, (req, res) => {
+router.post('/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const db = getDatabase();
 
-    const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.admin.id);
+    const admin = await Admin.findById(req.admin.id);
 
-    if (!bcrypt.compareSync(currentPassword, admin.password)) {
+    if (!admin) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'ادمین یافت نشد'
+      });
+    }
+
+    const isValidPassword = await admin.comparePassword(currentPassword);
+
+    if (!isValidPassword) {
       return res.status(400).json({
         status: 'error',
         message: 'رمز عبور فعلی اشتباه است'
       });
     }
 
-    const hashedPassword = bcrypt.hashSync(newPassword, 10);
-    db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedPassword, req.admin.id);
+    admin.password = newPassword;
+    await admin.save();
 
     res.json({
       status: 'success',
