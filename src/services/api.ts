@@ -64,6 +64,18 @@ class ApiService {
     return data;
   }
 
+  async register(username: string, password: string, email: string, full_name?: string) {
+    const data = await this.request<any>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, email, full_name }),
+    });
+    this.token = data.data.token;
+    if (this.token) {
+      localStorage.setItem('admin_token', this.token);
+    }
+    return data;
+  }
+
   logout() {
     this.token = null;
     localStorage.removeItem('admin_token');

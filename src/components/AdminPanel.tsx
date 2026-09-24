@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import AdminLogin from './AdminLogin';
+import AdminRegister from './AdminRegister';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface AdminPanelProps {
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState<any>(null);
   const [books, setBooks] = useState<any[]>([]);
@@ -157,7 +159,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   if (!isLoggedIn) {
-    return <AdminLogin onLogin={() => setIsLoggedIn(true)} />;
+    if (showRegister) {
+      return (
+        <AdminRegister 
+          onRegister={() => setIsLoggedIn(true)} 
+          onSwitchToLogin={() => setShowRegister(false)} 
+        />
+      );
+    }
+    return <AdminLogin onLogin={() => setIsLoggedIn(true)} onSwitchToRegister={() => setShowRegister(true)} />;
   }
 
   const tabs = [
