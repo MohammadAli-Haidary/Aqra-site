@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import AdminLogin from './AdminLogin';
 import AdminRegister from './AdminRegister';
+import SettingsTab from './admin/SettingsTab';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -897,6 +898,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Settings */}
+              {activeTab === 'settings' && (
+                <SettingsTab showNotification={showNotification} />
               )}
             </>
           )}
