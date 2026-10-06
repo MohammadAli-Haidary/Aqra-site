@@ -25,6 +25,8 @@ const contactRouter = require('./routes/contact');
 const newsletterRouter = require('./routes/newsletter');
 const authRouter = require('./routes/auth');
 const settingsRouter = require('./routes/settings');
+const slidersRouter = require('./routes/sliders');
+const featuresRouter = require('./routes/features');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -100,6 +102,8 @@ app.use('/api/testimonials', testimonialsRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/sliders', slidersRouter);
+app.use('/api/features', featuresRouter);
 
 // ============ Error Handling ============
 

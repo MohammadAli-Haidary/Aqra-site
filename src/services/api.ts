@@ -223,6 +223,13 @@ class ApiService {
     return this.request<any>(`/testimonials/${id}/approve`, { method: 'PATCH' });
   }
 
+  async updateTestimonial(id: string, data: any) {
+    return this.request<any>(`/testimonials/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async deleteTestimonial(id: string) {
     return this.request<any>(`/testimonials/${id}`, { method: 'DELETE' });
   }
@@ -274,15 +281,88 @@ class ApiService {
     return this.request<any>('/settings');
   }
 
-  async updateSettings(settings: any) {
+  async updateSettings(settings: Record<string, any>) {
     return this.request<any>('/settings', {
       method: 'PUT',
       body: JSON.stringify(settings),
     });
   }
 
+  async updateSetting(key: string, value: string) {
+    return this.request<any>(`/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    });
+  }
+
   async getStats() {
     return this.request<any>('/settings/dashboard/stats');
+  }
+
+  // ============ Sliders ============
+  
+  async getSliders() {
+    return this.request<any>('/sliders');
+  }
+
+  async getAllSliders() {
+    return this.request<any>('/sliders/all');
+  }
+
+  async createSlider(sliderData: FormData) {
+    const headers: HeadersInit = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    
+    const response = await fetch(`${API_BASE_URL}/sliders`, {
+      method: 'POST',
+      headers,
+      body: sliderData,
+    });
+    return response.json();
+  }
+
+  async updateSlider(id: string, sliderData: FormData) {
+    const headers: HeadersInit = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    
+    const response = await fetch(`${API_BASE_URL}/sliders/${id}`, {
+      method: 'PUT',
+      headers,
+      body: sliderData,
+    });
+    return response.json();
+  }
+
+  async deleteSlider(id: string) {
+    return this.request<any>(`/sliders/${id}`, { method: 'DELETE' });
+  }
+
+  // ============ Features ============
+  
+  async getFeatures() {
+    return this.request<any>('/features');
+  }
+
+  async getAllFeatures() {
+    return this.request<any>('/features/all');
+  }
+
+  async createFeature(data: any) {
+    return this.request<any>('/features', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFeature(id: string, data: any) {
+    return this.request<any>(`/features/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFeature(id: string) {
+    return this.request<any>(`/features/${id}`, { method: 'DELETE' });
   }
 
   // ============ Health ============

@@ -1,6 +1,6 @@
 /**
  * Settings Routes
- * مسیرهای تنظیمات
+ * مسیرهای تنظیمات - نسخه کامل
  */
 
 const express = require('express');
@@ -17,50 +17,47 @@ const authMiddleware = require('../middleware/auth');
 // Get all settings (public)
 router.get('/', async (req, res) => {
   try {
-    const settings = await SiteSetting.find();
+    const settings = await SiteSetting.findOne();
     
-    const settingsObj = {};
-    settings.forEach(s => {
-      settingsObj[s.setting_key] = s.setting_value;
-    });
-
-    res.json({ status: 'success',  settingsObj });
-  } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
-  }
-});
-
-// Get single setting
-router.get('/:key', async (req, res) => {
-  try {
-    const setting = await SiteSetting.findOne({ setting_key: req.params.key });
-
-    if (!setting) {
-      return res.status(404).json({ status: 'error', message: 'تنظیم یافت نشد' });
+    if (!settings) {
+      return res.json({ status: 'success', data: {} });
     }
 
-    res.json({ status: 'success',  { key: setting.setting_key, value: setting.setting_value } });
+    res.json({ status: 'success', data: settings });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }
 });
 
-// Update settings (admin)
+// Update all settings (admin)
 router.put('/', authMiddleware, async (req, res) => {
   try {
-    const settings = req.body;
+    const settingsData = req.body;
 
-    for (const [key, value] of Object.entries(settings)) {
-      await SiteSetting.findOneAndUpdate(
-        { setting_key: key },
-        { setting_value: value },
-        { upsert: true, new: true }
-      );
+    // Find or create settings
+    let settings = await SiteSetting.findOne();
+    
+    if (!settings) {
+      settings = new SiteSetting(settingsData);
+    } else {
+      // Update all fields
+      Object.keys(settingsData).forEach(key => {
+        if (settings.hasOwnProperty(key)) {
+          settings[key] = settingsData[key];
+        }
+      });
     }
 
-    res.json({ status: 'success', message: 'تنظیمات با موفقیت ذخیره شد' });
+    await settings.save();
+
+    res.json({ 
+      status: 'success', 
+      message: 'تنظیمات با موفقیت ذخیره شد',
+      data: settings 
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    console.error('Update settings error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
@@ -68,16 +65,25 @@ router.put('/', authMiddleware, async (req, res) => {
 router.put('/:key', authMiddleware, async (req, res) => {
   try {
     const { value } = req.body;
+    const key = req.params.key;
 
-    await SiteSetting.findOneAndUpdate(
-      { setting_key: req.params.key },
-      { setting_value: value },
-      { upsert: true, new: true }
-    );
+    let settings = await SiteSetting.findOne();
+    
+    if (!settings) {
+      settings = new SiteSetting({ [key]: value });
+    } else {
+      settings[key] = value;
+    }
 
-    res.json({ status: 'success', message: 'تنظیم با موفقیت ذخیره شد' });
+    await settings.save();
+
+    res.json({ 
+      status: 'success', 
+      message: 'تنظیم با موفقیت ذخیره شد',
+      data: { [key]: settings[key] }
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'خطای سرور' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
@@ -118,7 +124,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
       bestsellers
     };
 
-    res.json({ status: 'success',  stats });
+    res.json({ status: 'success', data: stats });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'خطای سرور' });
   }

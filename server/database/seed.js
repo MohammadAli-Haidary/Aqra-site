@@ -11,6 +11,8 @@ const Category = require('../models/Category');
 const Gallery = require('../models/Gallery');
 const Testimonial = require('../models/Testimonial');
 const SiteSetting = require('../models/SiteSetting');
+const Slider = require('../models/Slider');
+const Feature = require('../models/Feature');
 
 const seedDatabase = async () => {
   try {
@@ -26,6 +28,8 @@ const seedDatabase = async () => {
     await Gallery.deleteMany({});
     await Testimonial.deleteMany({});
     await SiteSetting.deleteMany({});
+    await Slider.deleteMany({});
+    await Feature.deleteMany({});
 
     // Seed Admin
     console.log('👤 ایجاد ادمین...');
@@ -91,16 +95,42 @@ const seedDatabase = async () => {
 
     // Seed Settings
     console.log('⚙️ ایجاد تنظیمات...');
-    const settings = [
-      { setting_key: 'site_name', setting_value: 'کتاب‌فروشی اقرأ' },
-      { setting_key: 'site_description', setting_value: 'بزرگترین کتاب‌فروشی کابل، افغانستان' },
-      { setting_key: 'site_address', setting_value: 'کابل، سرک اصلی دارالامان، نمره ۴۵' },
-      { setting_key: 'site_phone', setting_value: '+۹۳ ۷۰ ۱۲۳ ۴۵۶۷' },
-      { setting_key: 'site_email', setting_value: 'info@egra-book.af' },
-      { setting_key: 'site_working_hours', setting_value: 'شنبه تا پنجشنبه: ۸ صبح تا ۸ شب' },
-      { setting_key: 'free_shipping_threshold', setting_value: '2000' },
+    await SiteSetting.create({
+      site_name: 'کتاب‌فروشی اقرأ',
+      site_description: 'بزرگترین کتاب‌فروشی کابل، افغانستان',
+      address: 'کابل، سرک اصلی دارالامان، نمره ۴۵',
+      phone: '+۹۳ ۷۰ ۱۲۳ ۴۵۶۷',
+      email: 'info@egra-book.af',
+      working_hours: 'شنبه تا پنجشنبه: ۸ صبح تا ۸ شب',
+      about_text: 'کتاب‌فروشی اقرأ با بیش از ۱۵ سال سابقه درخشان در عرصه نشر و کتاب، یکی از معتبرترین و بزرگترین کتاب‌فروشی‌ها در شهر کابل، افغانستان است. ما از سال ۱۳۸۸ با هدف ترویج فرهنگ کتاب‌خوانی و فراهم‌سازی دسترسی آسان هموطنان عزیز به کتاب‌های باکیفیت، فعالیت خود را آغاز کردیم.',
+      total_books: 10000,
+      total_customers: 50000,
+      years_experience: 15,
+      provinces_covered: 34,
+      free_shipping_threshold: 2000
+    });
+
+    // Seed Sliders
+    console.log('🎬 ایجاد اسلایدرها...');
+    const sliders = [
+      { title: 'دنیای بی‌پایان کتاب', subtitle: 'بهترین کتاب‌ها با بهترین قیمت', description: 'بیش از ۱۰,۰۰۰ عنوان کتاب در دسته‌بندی‌های مختلف - ارسال به سراسر افغانستان', background: 'from-teal-900 via-teal-800 to-emerald-900', sort_order: 1 },
+      { title: 'تخفیف‌های ویژه', subtitle: 'تا ۵۰٪ تخفیف روی کتاب‌های پرفروش', description: 'فرصت را از دست ندهید! خرید آنلاین با ارسال به تمام ولایات افغانستان', background: 'from-teal-800 via-cyan-800 to-teal-900', sort_order: 2 },
+      { title: 'کتاب‌های تازه', subtitle: 'جدیدترین آثار نویسندگان برتر', description: 'هر هفته کتاب‌های جدید به مجموعه ما اضافه می‌شود', background: 'from-emerald-900 via-teal-800 to-teal-900', sort_order: 3 },
+      { title: '۱۵ سال اعتماد', subtitle: 'معتبرترین کتاب‌فروشی کابل', description: 'بیش از ۵۰,۰۰۰ مشتری راضی در سراسر افغانستان', background: 'from-teal-900 via-emerald-900 to-teal-800', sort_order: 4 },
     ];
-    await SiteSetting.insertMany(settings);
+    await Slider.insertMany(sliders);
+
+    // Seed Features
+    console.log('✨ ایجاد ویژگی‌ها...');
+    const features = [
+      { title: 'ارسال سریع', description: 'ارسال به سراسر افغانستان در کمترین زمان ممکن', icon: 'fas fa-truck-fast', color: 'from-blue-500 to-blue-600', sort_order: 1 },
+      { title: 'ضمانت اصالت', description: 'تمامی کتاب‌ها اصل و با مجوز رسمی نشر هستند', icon: 'fas fa-shield-halved', color: 'from-emerald-500 to-emerald-600', sort_order: 2 },
+      { title: 'تخفیف‌های ویژه', description: 'تخفیف‌های هفتگی و فصلی برای مشتریان ویژه', icon: 'fas fa-percent', color: 'from-teal-500 to-teal-600', sort_order: 3 },
+      { title: 'پشتیبانی ۲۴/۷', description: 'تیم پشتیبانی ما همیشه آماده پاسخگویی شما عزیزان است', icon: 'fas fa-headset', color: 'from-purple-500 to-purple-600', sort_order: 4 },
+      { title: 'پس‌دادن آسان', description: 'امکان پس‌دادن کتاب تا ۷ روز بدون هیچ شرطی', icon: 'fas fa-rotate-left', color: 'from-rose-500 to-rose-600', sort_order: 5 },
+      { title: 'پرداخت آسان', description: 'پرداخت نقدی در محل و آنلاین با تمام بانک‌های افغانستان', icon: 'fas fa-money-bill-wave', color: 'from-indigo-500 to-indigo-600', sort_order: 6 },
+    ];
+    await Feature.insertMany(features);
 
     console.log('\n═══════════════════════════════════════════');
     console.log('   ✅ دیتابیس با موفقیت seed شد!');
@@ -110,7 +140,9 @@ const seedDatabase = async () => {
     console.log('   📂 Categories: 12');
     console.log('   🖼️ Gallery: 6');
     console.log('   💬 Testimonials: 3');
-    console.log('   ⚙️ Settings: 7');
+    console.log('   ⚙️ Settings: 1');
+    console.log('   🎬 Sliders: 4');
+    console.log('   ✨ Features: 6');
     console.log('═══════════════════════════════════════════\n');
 
     process.exit(0);
