@@ -18,14 +18,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const [gallery, setGallery] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: string; message: string } | null>(null);
 
   // Add/Edit Form States
   const [showAddBook, setShowAddBook] = useState(false);
+  const [editingBook, setEditingBook] = useState<any>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [showAddGallery, setShowAddGallery] = useState(false);
+  const [editingGallery, setEditingGallery] = useState<any>(null);
   const [showAddTestimonial, setShowAddTestimonial] = useState(false);
+  const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
 
   const [bookForm, setBookForm] = useState({
     title: '', author: '', price: '', old_price: '', rating: 5,
@@ -42,6 +47,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 
   const [testimonialForm, setTestimonialForm] = useState({
     name: '', role: '', text: '', rating: 5, avatar: '👤'
+  });
+
+  const [settingsForm, setSettingsForm] = useState({
+    site_name: '', site_description: '', site_address: '',
+    site_phone: '', site_email: '', site_working_hours: '',
+    free_shipping_threshold: ''
   });
 
   // Check login status
@@ -91,6 +102,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
           const msgRes = await api.getMessages();
           setMessages(msgRes.data);
           break;
+        case 'settings':
+          const settingsRes = await api.getSettings();
+          setSettings(settingsRes.data);
+          setSettingsForm(settingsRes.data);
+          break;
       }
     } catch (error: any) {
       showNotification('error', error.message || 'خطا در دریافت اطلاعات');
@@ -105,7 +121,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // ============ Add Handlers ============
+  // ============ Settings Handlers ============
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.updateSettings(settingsForm);
+      showNotification('success', 'تنظیمات با موفقیت ذخیره شد');
+    } catch (error: any) {
+      showNotification('error', error.message || 'خطا در ذخیره تنظیمات');
+    }
+  };
+
+  // ============ Book Handlers ============
 
   const handleAddBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,12 +147,68 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       await api.createBook(formData);
       showNotification('success', 'کتاب با موفقیت اضافه شد');
       setShowAddBook(false);
-      setBookForm({ title: '', author: '', price: '', old_price: '', rating: 5, badge: 'جدید', category: '', cover: '📕', is_new: false, description: '', stock: 0 });
+      resetBookForm();
       loadData();
     } catch (error: any) {
       showNotification('error', error.message || 'خطا در افزودن کتاب');
     }
   };
+
+  const handleEditBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editingBook) return;
+    try {
+      const formData = new FormData();
+      Object.entries(bookForm).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+      await api.updateBook(editingBook._id, formData);
+      showNotification('success', 'کتاب با موفقیت ویرایش شد');
+      setEditingBook(null);
+      resetBookForm();
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message || 'خطا در ویرایش کتاب');
+    }
+  };
+
+  const resetBookForm = () => {
+    setBookForm({
+      title: '', author: '', price: '', old_price: '', rating: 5,
+      badge: 'جدید', category: '', cover: '📕', is_new: false, description: '', stock: 0
+    });
+  };
+
+  const startEditBook = (book: any) => {
+    setEditingBook(book);
+    setBookForm({
+      title: book.title,
+      author: book.author,
+      price: book.price,
+      old_price: book.old_price || '',
+      rating: book.rating,
+      badge: book.badge,
+      category: book.category,
+      cover: book.cover,
+      is_new: book.is_new,
+      description: book.description || '',
+      stock: book.stock || 0
+    });
+  };
+
+  const handleDeleteBook = async (id: string) => {
+    if (!confirm('آیا مطمئن هستید؟')) return;
+    try {
+      await api.deleteBook(id);
+      showNotification('success', 'کتاب حذف شد');
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message);
+    }
+  };
+
+  // ============ Category Handlers ============
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,12 +217,54 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       await api.createCategory(categoryForm);
       showNotification('success', 'دسته‌بندی با موفقیت اضافه شد');
       setShowAddCategory(false);
-      setCategoryForm({ name: '', icon: 'fas fa-book', count: 0, description: '' });
+      resetCategoryForm();
       loadData();
     } catch (error: any) {
       showNotification('error', error.message || 'خطا در افزودن دسته‌بندی');
     }
   };
+
+  const handleEditCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editingCategory) return;
+    try {
+      await api.updateCategory(editingCategory._id, categoryForm);
+      showNotification('success', 'دسته‌بندی با موفقیت ویرایش شد');
+      setEditingCategory(null);
+      resetCategoryForm();
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message || 'خطا در ویرایش دسته‌بندی');
+    }
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({ name: '', icon: 'fas fa-book', count: 0, description: '' });
+  };
+
+  const startEditCategory = (cat: any) => {
+    setEditingCategory(cat);
+    setCategoryForm({
+      name: cat.name,
+      icon: cat.icon,
+      count: cat.count,
+      description: cat.description || ''
+    });
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('آیا مطمئن هستید؟')) return;
+    try {
+      await api.deleteCategory(id);
+      showNotification('success', 'دسته‌بندی حذف شد');
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message);
+    }
+  };
+
+  // ============ Gallery Handlers ============
 
   const handleAddGallery = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,49 +280,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       await api.createGallery(formData);
       showNotification('success', 'تصویر با موفقیت اضافه شد');
       setShowAddGallery(false);
-      setGalleryForm({ title: '', category: 'فروشگاه', description: '', image: null });
+      resetGalleryForm();
       loadData();
     } catch (error: any) {
       showNotification('error', error.message || 'خطا در افزودن تصویر');
     }
   };
 
-  const handleAddTestimonial = async (e: React.FormEvent) => {
+  const handleEditGallery = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!editingGallery) return;
     try {
-      await api.submitTestimonial(testimonialForm);
-      showNotification('success', 'نظر با موفقیت اضافه شد');
-      setShowAddTestimonial(false);
-      setTestimonialForm({ name: '', role: '', text: '', rating: 5, avatar: '👤' });
+      const formData = new FormData();
+      formData.append('title', galleryForm.title);
+      formData.append('category', galleryForm.category);
+      formData.append('description', galleryForm.description || '');
+      if (galleryForm.image) {
+        formData.append('image', galleryForm.image);
+      }
+      await api.updateGallery(editingGallery._id, formData);
+      showNotification('success', 'تصویر با موفقیت ویرایش شد');
+      setEditingGallery(null);
+      resetGalleryForm();
       loadData();
     } catch (error: any) {
-      showNotification('error', error.message || 'خطا در افزودن نظر');
+      showNotification('error', error.message || 'خطا در ویرایش تصویر');
     }
   };
 
-  // ============ Delete Handlers ============
-
-  const handleDeleteBook = async (id: string) => {
-    if (!confirm('آیا مطمئن هستید؟')) return;
-    try {
-      await api.deleteBook(id);
-      showNotification('success', 'کتاب حذف شد');
-      loadData();
-    } catch (error: any) {
-      showNotification('error', error.message);
-    }
+  const resetGalleryForm = () => {
+    setGalleryForm({ title: '', category: 'فروشگاه', description: '', image: null });
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (!confirm('آیا مطمئن هستید؟')) return;
-    try {
-      await api.deleteCategory(id);
-      showNotification('success', 'دسته‌بندی حذف شد');
-      loadData();
-    } catch (error: any) {
-      showNotification('error', error.message);
-    }
+  const startEditGallery = (item: any) => {
+    setEditingGallery(item);
+    setGalleryForm({
+      title: item.title,
+      category: item.category,
+      description: item.description || '',
+      image: null
+    });
   };
 
   const handleDeleteGallery = async (id: string) => {
@@ -207,6 +332,52 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     } catch (error: any) {
       showNotification('error', error.message);
     }
+  };
+
+  // ============ Testimonial Handlers ============
+
+  const handleAddTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.submitTestimonial(testimonialForm);
+      showNotification('success', 'نظر با موفقیت اضافه شد');
+      setShowAddTestimonial(false);
+      resetTestimonialForm();
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message || 'خطا در افزودن نظر');
+    }
+  };
+
+  const handleEditTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editingTestimonial) return;
+    try {
+      await api.updateTestimonial(editingTestimonial._id, testimonialForm);
+      showNotification('success', 'نظر با موفقیت ویرایش شد');
+      setEditingTestimonial(null);
+      resetTestimonialForm();
+      loadData();
+    } catch (error: any) {
+      showNotification('error', error.message || 'خطا در ویرایش نظر');
+    }
+  };
+
+  const resetTestimonialForm = () => {
+    setTestimonialForm({ name: '', role: '', text: '', rating: 5, avatar: '👤' });
+  };
+
+  const startEditTestimonial = (test: any) => {
+    setEditingTestimonial(test);
+    setTestimonialForm({
+      name: test.name,
+      role: test.role || '',
+      text: test.text,
+      rating: test.rating,
+      avatar: test.avatar
+    });
   };
 
   const handleApproveTestimonial = async (id: string) => {
@@ -229,6 +400,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       showNotification('error', error.message);
     }
   };
+
+  // ============ Message Handlers ============
 
   const handleMarkMessageRead = async (id: string) => {
     try {
@@ -271,6 +444,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     { id: 'gallery', label: 'گالری', icon: 'fas fa-images' },
     { id: 'testimonials', label: 'نظرات', icon: 'fas fa-comments' },
     { id: 'messages', label: 'پیام‌ها', icon: 'fas fa-envelope' },
+    { id: 'settings', label: 'تنظیمات', icon: 'fas fa-cog' },
   ];
 
   return (
@@ -368,26 +542,69 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                 </div>
               )}
 
+              {/* Settings */}
+              {activeTab === 'settings' && (
+                <div>
+                  <h3 className="text-lg font-bold mb-4">تنظیمات سایت</h3>
+                  <form onSubmit={handleSaveSettings} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">نام سایت</label>
+                        <input value={settingsForm.site_name} onChange={(e) => setSettingsForm({...settingsForm, site_name: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">توضیحات سایت</label>
+                        <input value={settingsForm.site_description} onChange={(e) => setSettingsForm({...settingsForm, site_description: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">آدرس</label>
+                        <input value={settingsForm.site_address} onChange={(e) => setSettingsForm({...settingsForm, site_address: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">شماره تلفن</label>
+                        <input value={settingsForm.site_phone} onChange={(e) => setSettingsForm({...settingsForm, site_phone: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">ایمیل</label>
+                        <input value={settingsForm.site_email} onChange={(e) => setSettingsForm({...settingsForm, site_email: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">ساعات کاری</label>
+                        <input value={settingsForm.site_working_hours} onChange={(e) => setSettingsForm({...settingsForm, site_working_hours: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">حد ارسال رایگان (افغانی)</label>
+                        <input value={settingsForm.free_shipping_threshold} onChange={(e) => setSettingsForm({...settingsForm, free_shipping_threshold: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
+                      </div>
+                    </div>
+                    <button type="submit" className="bg-teal-800 text-white px-6 py-2 rounded-lg hover:bg-teal-900 transition-colors">
+                      <i className="fas fa-save ml-2"></i> ذخیره تنظیمات
+                    </button>
+                  </form>
+                </div>
+              )}
+
               {/* Books */}
               {activeTab === 'books' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">مجموع: {books.length} کتاب</h3>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setShowAddBook(true); }}
+                      onClick={(e) => { e.stopPropagation(); setShowAddBook(true); setEditingBook(null); resetBookForm(); }}
                       className="bg-teal-800 text-white px-4 py-2 rounded-lg hover:bg-teal-900 transition-colors"
                     >
                       <i className="fas fa-plus ml-2"></i> افزودن کتاب
                     </button>
                   </div>
 
-                  {/* Add Book Form */}
-                  {showAddBook && (
+                  {/* Add/Edit Book Form */}
+                  {(showAddBook || editingBook) && (
                     <div className="bg-teal-50 rounded-xl p-6 mb-4 border-2 border-teal-200" onClick={(e) => e.stopPropagation()}>
                       <h4 className="font-bold text-lg mb-4 text-teal-800">
-                        <i className="fas fa-plus-circle ml-2"></i> افزودن کتاب جدید
+                        <i className={`fas ${editingBook ? 'fa-edit' : 'fa-plus-circle'} ml-2`}></i>
+                        {editingBook ? 'ویرایش کتاب' : 'افزودن کتاب جدید'}
                       </h4>
-                      <form onSubmit={handleAddBook} className="space-y-4">
+                      <form onSubmit={editingBook ? handleEditBook : handleAddBook} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input value={bookForm.title} onChange={(e) => setBookForm({...bookForm, title: e.target.value})} placeholder="عنوان کتاب *" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" required />
                           <input value={bookForm.author} onChange={(e) => setBookForm({...bookForm, author: e.target.value})} placeholder="نویسنده *" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" required />
@@ -405,9 +622,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         <textarea value={bookForm.description} onChange={(e) => setBookForm({...bookForm, description: e.target.value})} placeholder="توضیحات" rows={3} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none resize-none"></textarea>
                         <div className="flex gap-2">
                           <button type="submit" className="bg-teal-800 text-white px-6 py-2 rounded-lg hover:bg-teal-900 transition-colors">
-                            <i className="fas fa-save ml-2"></i> ذخیره
+                            <i className="fas fa-save ml-2"></i> {editingBook ? 'بروزرسانی' : 'ذخیره'}
                           </button>
-                          <button type="button" onClick={() => setShowAddBook(false)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                          <button type="button" onClick={() => { setShowAddBook(false); setEditingBook(null); resetBookForm(); }} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                             لغو
                           </button>
                         </div>
@@ -423,9 +640,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                           <h4 className="font-bold text-gray-800">{book.title}</h4>
                           <p className="text-sm text-gray-500">{book.author} | {book.price} افغانی</p>
                         </div>
-                        <button onClick={() => handleDeleteBook(book._id)} className="w-9 h-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
-                          <i className="fas fa-trash text-sm"></i>
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => startEditBook(book)} className="w-9 h-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                            <i className="fas fa-edit text-sm"></i>
+                          </button>
+                          <button onClick={() => handleDeleteBook(book._id)} className="w-9 h-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
+                            <i className="fas fa-trash text-sm"></i>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -438,20 +660,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">مجموع: {categories.length} دسته‌بندی</h3>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setShowAddCategory(true); }}
+                      onClick={(e) => { e.stopPropagation(); setShowAddCategory(true); setEditingCategory(null); resetCategoryForm(); }}
                       className="bg-teal-800 text-white px-4 py-2 rounded-lg hover:bg-teal-900 transition-colors"
                     >
                       <i className="fas fa-plus ml-2"></i> افزودن دسته‌بندی
                     </button>
                   </div>
 
-                  {/* Add Category Form */}
-                  {showAddCategory && (
+                  {/* Add/Edit Category Form */}
+                  {(showAddCategory || editingCategory) && (
                     <div className="bg-teal-50 rounded-xl p-6 mb-4 border-2 border-teal-200" onClick={(e) => e.stopPropagation()}>
                       <h4 className="font-bold text-lg mb-4 text-teal-800">
-                        <i className="fas fa-plus-circle ml-2"></i> افزودن دسته‌بندی جدید
+                        <i className={`fas ${editingCategory ? 'fa-edit' : 'fa-plus-circle'} ml-2`}></i>
+                        {editingCategory ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی جدید'}
                       </h4>
-                      <form onSubmit={handleAddCategory} className="space-y-4">
+                      <form onSubmit={editingCategory ? handleEditCategory : handleAddCategory} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input value={categoryForm.name} onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})} placeholder="نام دسته‌بندی *" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" required />
                           <input value={categoryForm.icon} onChange={(e) => setCategoryForm({...categoryForm, icon: e.target.value})} placeholder="آیکون (fas fa-book)" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
@@ -460,9 +683,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         <input value={categoryForm.description} onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})} placeholder="توضیحات" className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
                         <div className="flex gap-2">
                           <button type="submit" className="bg-teal-800 text-white px-6 py-2 rounded-lg hover:bg-teal-900 transition-colors">
-                            <i className="fas fa-save ml-2"></i> ذخیره
+                            <i className="fas fa-save ml-2"></i> {editingCategory ? 'بروزرسانی' : 'ذخیره'}
                           </button>
-                          <button type="button" onClick={() => setShowAddCategory(false)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                          <button type="button" onClick={() => { setShowAddCategory(false); setEditingCategory(null); resetCategoryForm(); }} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                             لغو
                           </button>
                         </div>
@@ -480,9 +703,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                           <h4 className="font-bold text-gray-800">{cat.name}</h4>
                           <p className="text-sm text-gray-500">{cat.count} کتاب</p>
                         </div>
-                        <button onClick={() => handleDeleteCategory(cat._id)} className="w-9 h-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
-                          <i className="fas fa-trash text-sm"></i>
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => startEditCategory(cat)} className="w-9 h-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                            <i className="fas fa-edit text-sm"></i>
+                          </button>
+                          <button onClick={() => handleDeleteCategory(cat._id)} className="w-9 h-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
+                            <i className="fas fa-trash text-sm"></i>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -495,20 +723,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">مجموع: {gallery.length} تصویر</h3>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setShowAddGallery(true); }}
+                      onClick={(e) => { e.stopPropagation(); setShowAddGallery(true); setEditingGallery(null); resetGalleryForm(); }}
                       className="bg-teal-800 text-white px-4 py-2 rounded-lg hover:bg-teal-900 transition-colors"
                     >
                       <i className="fas fa-plus ml-2"></i> افزودن تصویر
                     </button>
                   </div>
 
-                  {/* Add Gallery Form */}
-                  {showAddGallery && (
+                  {/* Add/Edit Gallery Form */}
+                  {(showAddGallery || editingGallery) && (
                     <div className="bg-teal-50 rounded-xl p-6 mb-4 border-2 border-teal-200" onClick={(e) => e.stopPropagation()}>
                       <h4 className="font-bold text-lg mb-4 text-teal-800">
-                        <i className="fas fa-plus-circle ml-2"></i> افزودن تصویر جدید
+                        <i className={`fas ${editingGallery ? 'fa-edit' : 'fa-plus-circle'} ml-2`}></i>
+                        {editingGallery ? 'ویرایش تصویر' : 'افزودن تصویر جدید'}
                       </h4>
-                      <form onSubmit={handleAddGallery} className="space-y-4">
+                      <form onSubmit={editingGallery ? handleEditGallery : handleAddGallery} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input value={galleryForm.title} onChange={(e) => setGalleryForm({...galleryForm, title: e.target.value})} placeholder="عنوان تصویر *" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" required />
                           <select value={galleryForm.category} onChange={(e) => setGalleryForm({...galleryForm, category: e.target.value})} className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none">
@@ -521,14 +750,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         </div>
                         <input value={galleryForm.description} onChange={(e) => setGalleryForm({...galleryForm, description: e.target.value})} placeholder="توضیحات" className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">تصویر</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">تصویر {editingGallery && '(خالی بگذارید اگر تغییر نمی‌کنید)'}</label>
                           <input type="file" accept="image/*" onChange={(e) => setGalleryForm({...galleryForm, image: e.target.files?.[0] || null})} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
                         </div>
                         <div className="flex gap-2">
                           <button type="submit" className="bg-teal-800 text-white px-6 py-2 rounded-lg hover:bg-teal-900 transition-colors">
-                            <i className="fas fa-save ml-2"></i> ذخیره
+                            <i className="fas fa-save ml-2"></i> {editingGallery ? 'بروزرسانی' : 'ذخیره'}
                           </button>
-                          <button type="button" onClick={() => setShowAddGallery(false)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                          <button type="button" onClick={() => { setShowAddGallery(false); setEditingGallery(null); resetGalleryForm(); }} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                             لغو
                           </button>
                         </div>
@@ -548,9 +777,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         </div>
                         <h4 className="font-bold text-gray-800 text-sm truncate">{item.title}</h4>
                         <p className="text-xs text-gray-500">{item.category}</p>
-                        <button onClick={() => handleDeleteGallery(item._id)} className="absolute top-2 left-2 w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
-                          <i className="fas fa-trash text-xs"></i>
-                        </button>
+                        <div className="absolute top-2 left-2 flex gap-1">
+                          <button onClick={() => startEditGallery(item)} className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                            <i className="fas fa-edit text-xs"></i>
+                          </button>
+                          <button onClick={() => handleDeleteGallery(item._id)} className="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
+                            <i className="fas fa-trash text-xs"></i>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -563,20 +797,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">مجموع: {testimonials.length} نظر</h3>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setShowAddTestimonial(true); }}
+                      onClick={(e) => { e.stopPropagation(); setShowAddTestimonial(true); setEditingTestimonial(null); resetTestimonialForm(); }}
                       className="bg-teal-800 text-white px-4 py-2 rounded-lg hover:bg-teal-900 transition-colors"
                     >
                       <i className="fas fa-plus ml-2"></i> افزودن نظر
                     </button>
                   </div>
 
-                  {/* Add Testimonial Form */}
-                  {showAddTestimonial && (
+                  {/* Add/Edit Testimonial Form */}
+                  {(showAddTestimonial || editingTestimonial) && (
                     <div className="bg-teal-50 rounded-xl p-6 mb-4 border-2 border-teal-200" onClick={(e) => e.stopPropagation()}>
                       <h4 className="font-bold text-lg mb-4 text-teal-800">
-                        <i className="fas fa-plus-circle ml-2"></i> افزودن نظر جدید
+                        <i className={`fas ${editingTestimonial ? 'fa-edit' : 'fa-plus-circle'} ml-2`}></i>
+                        {editingTestimonial ? 'ویرایش نظر' : 'افزودن نظر جدید'}
                       </h4>
-                      <form onSubmit={handleAddTestimonial} className="space-y-4">
+                      <form onSubmit={editingTestimonial ? handleEditTestimonial : handleAddTestimonial} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input value={testimonialForm.name} onChange={(e) => setTestimonialForm({...testimonialForm, name: e.target.value})} placeholder="نام *" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" required />
                           <input value={testimonialForm.role} onChange={(e) => setTestimonialForm({...testimonialForm, role: e.target.value})} placeholder="سمت / شغل" className="px-4 py-2 border rounded-lg focus:border-teal-600 outline-none" />
@@ -590,9 +825,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         <textarea value={testimonialForm.text} onChange={(e) => setTestimonialForm({...testimonialForm, text: e.target.value})} placeholder="متن نظر *" rows={3} className="w-full px-4 py-2 border rounded-lg focus:border-teal-600 outline-none resize-none" required></textarea>
                         <div className="flex gap-2">
                           <button type="submit" className="bg-teal-800 text-white px-6 py-2 rounded-lg hover:bg-teal-900 transition-colors">
-                            <i className="fas fa-save ml-2"></i> ذخیره
+                            <i className="fas fa-save ml-2"></i> {editingTestimonial ? 'بروزرسانی' : 'ذخیره'}
                           </button>
-                          <button type="button" onClick={() => setShowAddTestimonial(false)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                          <button type="button" onClick={() => { setShowAddTestimonial(false); setEditingTestimonial(null); resetTestimonialForm(); }} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                             لغو
                           </button>
                         </div>
@@ -618,6 +853,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                               <i className="fas fa-check text-sm"></i>
                             </button>
                           )}
+                          <button onClick={() => startEditTestimonial(test)} className="w-9 h-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors">
+                            <i className="fas fa-edit text-sm"></i>
+                          </button>
                           <button onClick={() => handleDeleteTestimonial(test._id)} className="w-9 h-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors">
                             <i className="fas fa-trash text-sm"></i>
                           </button>
